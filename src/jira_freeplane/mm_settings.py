@@ -40,8 +40,10 @@ class MMConfig:
         project_key: str,
         reporter: str,
         noprompt: bool,
+        mm_file: Path,
         debug=False,
     ) -> None:
+        self.mm_file = mm_file
         self.debug = debug
         self.no_prompt = noprompt
         self.reporter = reporter
