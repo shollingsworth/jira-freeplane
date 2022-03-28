@@ -1,0 +1,7 @@
+version: "3.9"
+
+services:
+  jira_mindmap:
+    image: jira_mindmap
+    build:
+      context: .
