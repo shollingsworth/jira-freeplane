@@ -31,7 +31,7 @@ def mindmap_to_jira(conf: MMConfig):
     errors = []
     LOG.info("Santity checking config files...")
     for _type, dct in conf.data_dct.items():
-        fp = conf.file_dct[_type]
+        fp = conf.files[_type]
         fields = conf.field_dct[_type]
         fdct = {i.name: i for i in fields}
         project = dct["Project"]  # type: ignore

@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 """XML to dict parse."""
 import json
-from typing import Iterable
-import untangle
+import textwrap
 from configparser import ConfigParser
 from pathlib import Path
-import textwrap
+from typing import Iterable
+
+import untangle
+
 from jira_freeplane.common import LOG
 from jira_freeplane.mm_settings import MMConfig
+
 
 class Node:
     """Node class."""
@@ -16,7 +19,11 @@ class Node:
     COLLECTION = {}
 
     def __init__(
-        self, config:MMConfig, node: untangle.Element, depth: int, parent: untangle.Element = None
+        self,
+        config: MMConfig,
+        node: untangle.Element,
+        depth: int,
+        parent: untangle.Element = None, # type: ignore
     ) -> None:
         self.glb = config
         self.depth = depth
@@ -114,10 +121,11 @@ class Node:
         else:
             return str(self.depth - 3)
 
-def node_tree_with_depth(config:MMConfig, root: untangle.Element) -> Iterable[Node]:
+
+def node_tree_with_depth(config: MMConfig, root: untangle.Element) -> Iterable[Node]:
     """Return a list of nodes with depth."""
 
-    def _vals(node: untangle.Element, depth=0, parent: untangle.Element = None):
+    def _vals(node: untangle.Element, depth=0, parent: untangle.Element = None): # type: ignore
         yield node, depth, parent
         children = node.get_elements("node")
         if not children:
@@ -125,11 +133,11 @@ def node_tree_with_depth(config:MMConfig, root: untangle.Element) -> Iterable[No
         for child in children:
             yield from _vals(child, depth + 1, node)
 
-    for node, depth, parent in _vals(root):
+    for node, depth, parent in _vals(root): # type: ignore
         yield Node(config, node, depth, parent)
 
 
-def create_subtasks(config:MMConfig, nodes: Iterable[Node]) -> None:
+def create_subtasks(config: MMConfig, nodes: Iterable[Node]) -> None:
     """Create epic."""
     for node in nodes:
         if node.depth_type != config.TYPE_SUBTASK:
@@ -147,7 +155,9 @@ def create_subtasks(config:MMConfig, nodes: Iterable[Node]) -> None:
             if i.depth == 0:
                 continue
             body += f"\n{i.child_text}"
-        LOG.info(f"Creating parent {node.id}, {node.depth_type}, {node.depth}, {node.text}")
+        LOG.info(
+            f"Creating parent {node.id}, {node.depth_type}, {node.depth}, {node.text}"
+        )
         if node.note:
             body += f"-----------------------------\n\n\n{node.note}"
 
@@ -159,7 +169,7 @@ def create_subtasks(config:MMConfig, nodes: Iterable[Node]) -> None:
             raise
         working = dict(config.data_dct[config.TYPE_SUBTASK])
         working["Summary"] = node.text
-        working["Parent"] = {
+        working["Parent"] = { # type: ignore
             "key": parent_key,
         }
         working["Description"] = body or "---"
@@ -174,7 +184,8 @@ def create_subtasks(config:MMConfig, nodes: Iterable[Node]) -> None:
             LOG.info(f"writing {node.text} -> {node.cfile}")
             node.config.write(f)
 
-def create_tasks(config:MMConfig, nodes: Iterable[Node]) -> None:
+
+def create_tasks(config: MMConfig, nodes: Iterable[Node]) -> None:
     """Create epic."""
     for node in nodes:
         if node.depth_type != config.TYPE_TASK:
@@ -201,7 +212,7 @@ def create_tasks(config:MMConfig, nodes: Iterable[Node]) -> None:
             node.config.write(f)
 
 
-def create_epics(config:MMConfig, nodes: Iterable[Node]) -> None:
+def create_epics(config: MMConfig, nodes: Iterable[Node]) -> None:
     """Create epic."""
     runlist = []
     for node in nodes:
@@ -234,16 +245,23 @@ def create_epics(config:MMConfig, nodes: Iterable[Node]) -> None:
         if node.config.get("jira", "is_linked") == "true":
             LOG.info(f"{node.cfile} is linked, skipping")
             continue
-        config.jira.link_parent_issue(node.config.get("jira", "key"), config.epic_parent)
+        config.jira.link_parent_issue(
+            node.config.get("jira", "key"), config.epic_parent
+        )
         node.config.set("jira", "is_linked", "true")
         with node.cfile.open("w") as f:
             LOG.info(f"updating with linked {node.text} -> {node.cfile}")
             node.config.write(f)
 
-def show_summary(config:MMConfig, nodes: Iterable[Node]) -> None:
+
+def show_summary(config: MMConfig, nodes: Iterable[Node]) -> None:
     """Create epic."""
     for node in nodes:
-        if node.depth_type not in [config.TYPE_EPIC, config.TYPE_TASK, config.TYPE_SUBTASK]:
+        if node.depth_type not in [
+            config.TYPE_EPIC,
+            config.TYPE_TASK,
+            config.TYPE_SUBTASK,
+        ]:
             continue
         key = node.config.get("jira", "key")
         LOG.info(f"{config.jira_url}/browse/{key} -> {node.text}")
