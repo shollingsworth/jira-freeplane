@@ -18,5 +18,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build the Docker image
         run: docker build -f docker/Dockerfile -t hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME} .
-      - name: Push Image
+      - name: Push Image Version
         run: docker push hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME}
+      - name: Push Image Latest
+        run: docker push hollingsworthsteven/jira-freeplane:latest
