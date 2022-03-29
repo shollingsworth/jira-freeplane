@@ -16,10 +16,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Show Env
-        run: pwd && find
       - name: Build the Docker image
-        run: |
-          # docker build -f ${RUNNER_WORKSPACE}/docker/Dockerfile -t hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME} ${RUNNER_WORKSPACE}
-          docker build -f docker/Dockerfile -t hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME} .
-          # docker push hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME}
+        run: docker build -f docker/Dockerfile -t hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME} .
+      - name: Push Image
+        run: docker push hollingsworthsteven/jira-freeplane:${GITHUB_REF_NAME}
