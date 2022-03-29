@@ -32,6 +32,7 @@ Quickstart
 
 - Create a new mindmap, see `sample.mm <https://github.com/shollingsworth/jira-freeplane/blob/main/examples/sample.mm>`_ 
   as an example.
+- If you want to start non interactive (with an ini file) you can find one `here <https://github.com/shollingsworth/jira-freeplane/blob/main/examples/project.ini>`_
 
 
 docker (interactive mode)
