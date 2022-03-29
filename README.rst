@@ -3,12 +3,20 @@ JIRA Freeplane issue creator
 
 .. contents:: Page Contents
 
+Endpoint Requirements
+---------------------
+- `JIRA <https://jira.atlassian.com>`_
+  - confirmed working with Server `v8.x.x`
+
 Software Requirements
 ---------------------
 - `Freeplane <http://freeplane.sourceforge.net/>`_
+  - confirmed working with version `1.7.10`
 - Pick one
     - `Python <http://www.python.org/>`_
     - `Docker <https://www.docker.com/>`_
+
+
 
 
 Installation
@@ -16,6 +24,12 @@ Installation
 
 Python
 ^^^^^^
+
+.. warning::
+
+   If using windows, WSL2 (Windows Subsystem for Linux) is required.
+
+
 .. code:: bash
 
     pip install jira_freeplane
