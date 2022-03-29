@@ -25,8 +25,8 @@ docker \
     -v "$(pwd):/app" \
     -v "$conf:/config/conf.ini" \
     -v "$mindmap:/config/freeplane_doc.mm" \
-    -e "JIRA_USER=${CUDA_USER}" \
-    -e "JIRA_PASS=${CUDA_PASS}" \
+    -e "JIRA_USER=${JIRA_USER}" \
+    -e "JIRA_PASS=${JIRA_PASS}" \
     -w "/app" \
     -u "$(id -u):$(id -g)" \
     jira_mindmap jirafp \

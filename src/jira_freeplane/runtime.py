@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """CLI / Runtime interface."""
+import argparse
 from configparser import ConfigParser
 from pathlib import Path
-import argparse
 
-import untangle
-
-from jira_freeplane.common import LOG
+from jira_freeplane.common import LOG, prompt_line, yesno
 from jira_freeplane.mm import (
     create_epics,
     create_subtasks,
@@ -16,6 +14,7 @@ from jira_freeplane.mm import (
     show_summary,
 )
 from jira_freeplane.mm_settings import MMConfig
+import untangle
 
 
 def mindmap_to_jira(conf: MMConfig):
@@ -71,9 +70,16 @@ def get_args():
         description=__doc__,
     )
     parser.add_argument(
-        "ini_file",
+        "--config",
+        "-c",
         help="Path to the project.ini file",
         type=str,
+    )
+    parser.add_argument(
+        "--interactive",
+        "-i",
+        help="Run in interactive mode",
+        action="store_true",
     )
     parser.add_argument(
         "mm_file",
@@ -83,14 +89,62 @@ def get_args():
     return parser.parse_args()
 
 
+def set_ini_file(ini, wd, dest_ini):
+    """Set the ini file."""
+
+    ini.set("jira", "url", prompt_line("JIRA URL (i.e. https://jira.example.com)"))
+    ini.set("jira", "reporter", prompt_line("JIRA Reporter (i.e. rsmith)"))
+    ini.set(
+        "jira",
+        "project_parent_issue_key",
+        prompt_line("JIRA Project Parent Issue Key (i.e. PROJ-123)"),
+    )
+    ini.set(
+        "jira", "project_key", prompt_line("JIRA Actionable Tasks Project, i.e. OPS")
+    )
+    ini.set("jira", "working_dir", str(wd))
+    ini.set(
+        "jira", "debug", "true" if yesno("Enable Debug? (verbose output)") else "false"
+    )
+    ini.set(
+        "jira",
+        "no_prompt",
+        "true" if yesno("Disable Prompts? (no user interaction)") else "false",
+    )
+    if yesno(f"Create {dest_ini} ?"):
+        with open(dest_ini, "w") as f:
+            ini.write(f)
+        LOG.info("Created %s", dest_ini)
+    else:
+        LOG.info("Not creating project.ini file")
+
+
 def run_mindmap_to_jira():
     """Run main function."""
     args = get_args()
+    mmfile = Path(args.mm_file)
+    if not mmfile.exists():
+        raise SystemExit(f"{mmfile} does not exist")
+
     ini = ConfigParser()
-    ini.read(Path(args.ini_file))
+    if args.interactive:
+        ini.add_section("jira")
+        wd = Path.cwd().absolute()
+        dest_ini = wd / "project.ini"
+        if dest_ini.exists():
+            LOG.info("%s already exists, using that", dest_ini)
+            ini.read(dest_ini)
+        else:
+            set_ini_file(ini, wd, dest_ini)
+
+    elif args.config:
+        ini.read(Path(args.ini_file))
+    else:
+        raise SystemExit("No config file specified, or interactive mode not selected")
+
     conf = MMConfig(
         working_dir=ini.get("jira", "working_dir"),
-        epic_parent=ini.get("jira", "epic_parent"),
+        project_parent_issue_key=ini.get("jira", "project_parent_issue_key"),
         debug=ini.getboolean("jira", "debug"),
         project_key=ini.get("jira", "project_key"),
         jira_url=ini.get("jira", "url"),
@@ -103,3 +157,12 @@ def run_mindmap_to_jira():
     except KeyboardInterrupt:
         LOG.info("Interrupted by user")
         raise SystemExit("Bye!")
+
+
+def main():
+    """Run main function."""
+    run_mindmap_to_jira()
+
+
+if __name__ == "__main__":
+    main()

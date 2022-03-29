@@ -8,25 +8,8 @@ from typing import Dict, List, Tuple
 import yaml
 from simple_term_menu import TerminalMenu
 
-from jira_freeplane.common import AUTOFIELDS, LOG
+from jira_freeplane.common import AUTOFIELDS, LOG, yesno
 from jira_freeplane.libjira import Field, JiraInterface
-
-# simple-term-menu
-
-
-def yesno(question, noprompt=False):
-    """Simple Yes/No Function."""
-    if noprompt:
-        return True
-    prompt = f"{question} ? (y/n): "
-    ans = input(prompt).strip().lower()
-    if ans not in ["y", "n"]:
-        print(f"{ans} is invalid, please try again...")
-        return yesno(question)
-    if ans == "y":
-        return True
-    return False
-
 
 class MMConfig:
     """Config class."""
@@ -39,7 +22,7 @@ class MMConfig:
     def __init__(
         self,
         working_dir: str,
-        epic_parent: str,
+        project_parent_issue_key: str,
         jira_url: str,
         project_key: str,
         reporter: str,
@@ -54,8 +37,8 @@ class MMConfig:
         self.jira_url = jira_url
         self.project_key = project_key
         self.required_dct = {}  # type: Dict[Tuple[str, str], List[str]]
-        self.epic_parent = epic_parent
-        self.working_dir = Path(working_dir).absolute().joinpath(epic_parent)
+        self.project_parent_issue_key = project_parent_issue_key
+        self.working_dir = Path(working_dir).absolute().joinpath(project_parent_issue_key)
         self.cache_dir = self.working_dir.joinpath("cache")
         self.file_settings = self.working_dir.joinpath("settings.yaml")
         make_config = False
@@ -111,7 +94,7 @@ class MMConfig:
         )
 
         LOG.info(f"JIRA URL: {self.jira_url}")
-        LOG.info(f"Epic Parent: {self.epic_parent}")
+        LOG.info(f"Epic Parent: {self.project_parent_issue_key}")
         LOG.info(f"Global Template Settings: {self.settings}")
         if do_create:
             self.select_settings()
@@ -139,6 +122,7 @@ class MMConfig:
 
     def get_values(self, field: Field):
         prefix = "Select "
+        esc = "(ESC to skip)"
         if field.required:
             prefix = f"{prefix} *Required"
         else:
@@ -149,14 +133,17 @@ class MMConfig:
             if field.is_array:
                 term = TerminalMenu(
                     field.allowed_values,
-                    title=f"{prefix} {field.name}",
+                    title=f"{esc} {prefix} {field.name}",
                     multi_select=True,
                 )
-                value = [keys[i] for i in term.show()]  # type: ignore
-                self.settings[field.name] = value  # type: ignore
+                tval = term.show()
+                if tval is None:
+                    value = None
+                else:
+                    value = [keys[i] for i in tval]  # type: ignore
             else:
                 term = TerminalMenu(
-                    field.allowed_values, title=f"{prefix} {field.name}"
+                    field.allowed_values, title=f"{esc} {prefix} {field.name}"
                 )
                 value = keys[term.show()]  # type: ignore
         else:
@@ -168,9 +155,13 @@ class MMConfig:
                         break
                     else:
                         value.append(_val)
+                if not value:
+                    value = None
             else:
                 value = input(f"TYPE Entry, or enter: {prefix} {field.name}: ")
-        return value
+        if value is None and field.required:
+            raise SystemExit(f"{field.name} is required, aborting")
+        return value if not None else ""
 
     def select_settings(self):
         for issue_type, fields in self.field_dct.items():
@@ -196,16 +187,5 @@ class MMConfig:
                     LOG.info("Skipping Auto-Set Value %s", field.name)
                     continue
                 value = self.get_values(field)
-                if not value == "":
+                if value:
                     self.settings[field.name] = value  # type: ignore
-
-
-def main():
-    options = ["entry 1", "entry 2", "entry 3"]
-    terminal_menu = TerminalMenu(options)
-    menu_entry_index = terminal_menu.show()
-    print(f"You have selected {options[menu_entry_index]}!")  # type: ignore
-
-
-if __name__ == "__main__":
-    main()

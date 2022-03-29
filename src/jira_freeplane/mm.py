@@ -246,7 +246,7 @@ def create_epics(config: MMConfig, nodes: Iterable[Node]) -> None:
             LOG.info(f"{node.cfile} is linked, skipping")
             continue
         config.jira.link_parent_issue(
-            node.config.get("jira", "key"), config.epic_parent
+            node.config.get("jira", "key"), config.project_parent_issue_key
         )
         node.config.set("jira", "is_linked", "true")
         with node.cfile.open("w") as f:
