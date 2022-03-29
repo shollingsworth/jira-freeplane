@@ -57,3 +57,4 @@ MANIFEST
 .out
 tmp/
 pyrightconfig.json
+old/
