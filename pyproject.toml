@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "jira-freeplane"
+description = "Make JIRA Epics, Tasks, and Sub-tasks via a freeplane mindmap"
+authors = ["Stevo <hollingsworth.stevend@gmail.com>"]
+maintainers = ["Stevo <hollingsworth.stevend@gmail.com>"]
+version = "0.1.0"
+keywords = ["jira", "freeplane", "mindmap", "mindmapping"]
+readme = "README.rst"
+license = "MIT"
+homepage = "https://github.com/shollingsworth/jira-freeplane"
+repository = "https://github.com/shollingsworth/jira-freeplane"
+include = [
+    "LICENSE",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+]
+
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+PyYAML = ">=5.4.1"
+untangle = ">=1.1.1"
+jira = ">=3.1.1"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+jira-freeplane = "jira_freeplane.runtime:run_mindmap_to_jira"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+
+[build-system]
+requires = ["poetry", "poetry-dynamic-versioning"]
+build-backend = "poetry.core.masonry.api"

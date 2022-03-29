@@ -10,10 +10,14 @@ help: show_ver
 		| grep -v ' := ' \
 		| cut -d ':' -f 1 | grep -v '^help$$'
 
+clean:
+	rm -rfv dist/*
+
 show_ver:
 	@echo "VERSION: $(VERSION)"
 	@echo "COMMIT_HASH: $(COMMIT_HASH)"
 
-build: show_ver
-	docker build -t hollingsworthsteven/jira-freeplane:$(VERSION) .
-	docker push hollingsworthsteven/jira-freeplane:$(VERSION)
+test: clean show_ver
+	poetry build
+	docker build -t jira-freeplane-test:$(VERSION) -f docker/test.Dockerfile .
+	docker run --rm -it -v $(pwd):/app jira-freeplane-test:$(VERSION) bash
