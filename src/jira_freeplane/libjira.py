@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""XML to dict parse."""
+"""Interact with Jira."""
 import json
 import os
 from pathlib import Path
@@ -35,7 +35,7 @@ class Field:
         data: Dict[str, Any],
         project: str,
         issue_type: str,
-        merge_values: Dict[str, Any] = None,
+        merge_values: Dict[str, Any] = None, # type: ignore
     ):
         """Init."""
         self.project = project
@@ -95,9 +95,9 @@ class Field:
     @property
     def default_value(self) -> Union[str, List[str], int, None]:
         """Get default value."""
-        if self.name == "issuetype":
+        if self.name == "Issue Type":
             return self.issue_type
-        if self.name == "project":
+        if self.name == "Project":
             return self.project
         if self.name in self.merge_values.keys():
             val = self.merge_values[self.name]
@@ -107,15 +107,11 @@ class Field:
                 raise SystemExit(
                     f'{self.name} value: "{val}" is not in allowed values: {self.allowed_values}'
                 )
-        if self.schema["type"] == "number":
-            return 0
         if len(self.allowed_values) == 1:
             lst = list(self.allowed_values.keys())
             return lst[0]
         if self.is_array and not self.allowed_values:
             return []
-        elif self.allowed_values:
-            return list(self.allowed_values.keys())
         return ""
 
     @property
@@ -166,10 +162,10 @@ class Field:
         if self.name in AUTOFIELDS:
             return ""
         dct = dict(self.out_dict)
-        txt = yaml.dump(dct, Dumper=yaml.SafeDumper, default_flow_style=False).lstrip()
-        lines = txt.split("\n")
+        txt = yaml.dump(dct, Dumper=yaml.SafeDumper, default_flow_style=False).lstrip() # type: ignore
+        lines = txt.split("\n") # type: ignore
         if self.is_array:
-            lines[0] = f"{lines[0]} # Select Multiple"
+            lines[0] = f"{lines[0]} # Select Multiple" # type: ignore
         elif (
             self.allowed_values
             and self.default_value != self.allowed_values
@@ -179,7 +175,7 @@ class Field:
             lines = [first]
             for i in self.allowed_values:
                 lines.append(f"   {i}")
-        return "\n".join(lines)
+        return "\n".join(lines) # type: ignore
 
     @property
     def score(self) -> int:
@@ -204,7 +200,7 @@ class JiraInterface:
         cache_dir: Path,
         jira_url: str,
         debug: bool = False,
-        merge_values: Dict[str, Any] = None,  # template merge values
+        merge_values: Dict[str, Any] = None,  # type: ignore # template merge values
     ) -> None:
         if merge_values is None:
             self.merge_values = {}

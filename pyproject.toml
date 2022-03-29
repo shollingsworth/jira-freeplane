@@ -25,6 +25,7 @@ PyYAML = ">=5.4.1, <7"
 untangle = ">=1.1.1, <2"
 jira = ">=3.1.1, <4"
 urllib3 = ">=1.26.5, <2"
+simple-term-menu = "<=1.4.1, <2"
 
 [tool.poetry.dev-dependencies]
 

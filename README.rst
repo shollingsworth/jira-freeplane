@@ -3,13 +3,6 @@ JIRA Freeplane issue creator
 
 .. contents:: Page Contents
 
-.. image:: http://unmaintained.tech/badge.svg
-  :target: http://unmaintained.tech
-  :alt: No Maintenance Intended
-
-
-Long Description
-
 
 Installation
 ------------
@@ -22,8 +15,8 @@ Installation
 Contribute
 ----------
 
-- Issue Tracker: github.com/shollingsworth/$project/issues
-- Source Code: github.com/shollingsworth/$project
+- Issue Tracker: github.com/shollingsworth/jira-freeplane/issues
+- Source Code: github.com/shollingsworth/jira-freeplane
 
 Support
 -------
