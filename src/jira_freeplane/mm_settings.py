@@ -28,9 +28,12 @@ class MMConfig:
         reporter: str,
         noprompt: bool,
         mm_file: Path,
+        skip_optional: bool,
+        dry_run: bool,
         debug=False,
     ) -> None:
         self.mm_file = mm_file
+        self.dry_run = dry_run
         self.debug = debug
         self.no_prompt = noprompt
         self.reporter = reporter
@@ -41,6 +44,8 @@ class MMConfig:
         self.working_dir = Path(working_dir).absolute().joinpath(project_parent_issue_key)
         self.cache_dir = self.working_dir.joinpath("cache")
         self.file_settings = self.working_dir.joinpath("settings.yaml")
+        self.skip_optional = skip_optional
+        self.interactive_seen = []
         make_config = False
         if yesno(f"Do you want to create files if they do not exist?", self.no_prompt):
             make_config = True
@@ -145,7 +150,11 @@ class MMConfig:
                 term = TerminalMenu(
                     field.allowed_values, title=f"{esc} {prefix} {field.name}"
                 )
-                value = keys[term.show()]  # type: ignore
+                tval = term.show()
+                if tval is None:
+                    value = None
+                else:
+                    value = keys[tval]  # type: ignore
         else:
             if field.is_array:
                 value = []
@@ -168,7 +177,12 @@ class MMConfig:
             LOG.info(f"Populating {issue_type} fields")
 
             for field in fields:  # type: List[Field]
+                if field.name in self.interactive_seen:
+                    LOG.info(f"Skipping {field.name}, already seen")
+                    continue
                 if field.name == "Issue Type":
+                    continue
+                if not field.required and self.skip_optional:
                     continue
                 if field.name in self.settings:
                     LOG.info("Skipping already set value: %s == %s", field.name, self.settings[field.name])  # type: ignore
@@ -189,3 +203,6 @@ class MMConfig:
                 value = self.get_values(field)
                 if value:
                     self.settings[field.name] = value  # type: ignore
+                else:
+                    LOG.info("Skipping empty value: %s", field.name)
+                self.interactive_seen.append(field.name)

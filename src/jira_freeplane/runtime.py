@@ -5,16 +5,12 @@ import argparse
 from configparser import ConfigParser
 from pathlib import Path
 
-from jira_freeplane.common import LOG, prompt_line, yesno
-from jira_freeplane.mm import (
-    create_epics,
-    create_subtasks,
-    create_tasks,
-    node_tree_with_depth,
-    show_summary,
-)
-from jira_freeplane.mm_settings import MMConfig
 import untangle
+
+from jira_freeplane.common import LOG, prompt_line, yesno
+from jira_freeplane.mm import (create_epics, create_subtasks, create_tasks,
+                               node_tree_with_depth, show_summary)
+from jira_freeplane.mm_settings import MMConfig
 
 
 def mindmap_to_jira(conf: MMConfig):
@@ -53,15 +49,18 @@ def mindmap_to_jira(conf: MMConfig):
     LOG.info(
         f"Conf type: epic:{conf.TYPE_EPIC}, task:{conf.TYPE_TASK}, sub-task:{conf.TYPE_SUBTASK}"
     )
-    # Start the stuffs
-    LOG.info("Creating Epics...")
-    create_epics(conf, nodes)
-    LOG.info("Creating Tasks...")
-    create_tasks(conf, nodes)
-    LOG.info("Creating Subtasks...")
-    create_subtasks(conf, nodes)
-    LOG.info("Done!")
-    show_summary(conf, nodes)
+    if conf.dry_run:
+        LOG.info("Dry run enabled, not creating issues")
+    else:
+        # Start the stuffs
+        LOG.info("Creating Epics...")
+        create_epics(conf, nodes)
+        LOG.info("Creating Tasks...")
+        create_tasks(conf, nodes)
+        LOG.info("Creating Subtasks...")
+        create_subtasks(conf, nodes)
+        LOG.info("Done!")
+        show_summary(conf, nodes)
 
 
 def get_args():
@@ -92,6 +91,8 @@ def get_args():
 def set_ini_file(ini, wd, dest_ini):
     """Set the ini file."""
 
+    ini.set("jira", "dry_run", "true" if yesno("Dry run (don't actually create issues)") else "false")
+    ini.set("jira", "skip_optional", "true" if yesno("Skip optional fields") else "false")
     ini.set("jira", "url", prompt_line("JIRA URL (i.e. https://jira.example.com)"))
     ini.set("jira", "reporter", prompt_line("JIRA Reporter (i.e. rsmith)"))
     ini.set(
@@ -136,20 +137,49 @@ def run_mindmap_to_jira():
             ini.read(dest_ini)
         else:
             set_ini_file(ini, wd, dest_ini)
+        args.config = dest_ini
 
     elif args.config:
         ini.read(Path(args.ini_file))
     else:
         raise SystemExit("No config file specified, or interactive mode not selected")
 
+    dest_ini = Path(args.config)
+
+    wd = ini.get("jira", "working_dir")
+    errors = []
+    if not Path(wd).exists():
+        errors.append(f"working directory {wd} does not exist")
+    project_parent_issue_key = ini.get("jira", "project_parent_issue_key")
+    if not project_parent_issue_key:
+        errors.append("project_parent_issue_key is required in {dest_ini}")
+    pkey = ini.get("jira", "project_key")
+    if not pkey:
+        errors.append("project_key is required in {dest_ini}")
+
+    jira_url = ini.get("jira", "url")
+    if not jira_url:
+        errors.append("jira_url is required in {dest_ini}")
+
+    jira_reporter = ini.get("jira", "reporter")
+    if not jira_reporter:
+        errors.append("jira_reporter is required in {dest_ini}")
+
+    if errors:
+        for msg in errors:
+            LOG.error(msg)
+        raise SystemExit(f"Missing {ini} required fields")
+
     conf = MMConfig(
-        working_dir=ini.get("jira", "working_dir"),
-        project_parent_issue_key=ini.get("jira", "project_parent_issue_key"),
-        debug=ini.getboolean("jira", "debug"),
-        project_key=ini.get("jira", "project_key"),
-        jira_url=ini.get("jira", "url"),
-        reporter=ini.get("jira", "reporter"),
-        noprompt=ini.getboolean("jira", "no_prompt"),
+        working_dir=str(wd),
+        project_parent_issue_key=project_parent_issue_key,
+        debug=ini.getboolean("jira", "debug") or False,
+        project_key=pkey,
+        jira_url=jira_url,
+        reporter=jira_reporter,
+        noprompt=ini.getboolean("jira", "no_prompt") or False,
+        skip_optional=ini.getboolean("jira", "skip_optional") or False,
+        dry_run=ini.getboolean("jira", "dry_run") or False,
         mm_file=Path(args.mm_file),
     )
     try:
